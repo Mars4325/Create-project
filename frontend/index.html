@@ -266,6 +266,18 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label for="test-case-status">Статус:</label>
+                    <select id="test-case-status" name="status">
+                        <option value="draft">Черновик</option>
+                        <option value="review">На проверке</option>
+                        <option value="approved">Одобрен</option>
+                        <option value="in_progress">В работе</option>
+                        <option value="passed">Пройден</option>
+                        <option value="failed">Провален</option>
+                        <option value="blocked">Заблокирован</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="test-case-steps">Шаги выполнения:</label>
                     <textarea id="test-case-steps" name="steps" rows="4" placeholder="1. Шаг первый&#10;2. Шаг второй&#10;3. Шаг третий"></textarea>
                 </div>

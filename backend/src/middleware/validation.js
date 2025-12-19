@@ -89,7 +89,8 @@ const validateTestCaseCreation = [
     .withMessage('Description must be less than 1000 characters'),
 
   body('project_id')
-    .isUUID()
+    .isString()
+    .notEmpty()
     .withMessage('Valid project ID is required'),
 
   body('priority')

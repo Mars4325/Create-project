@@ -105,6 +105,17 @@ async function loadDashboardData() {
         const projectsCount = projectsResult.status === 'fulfilled' ? projectsResult.value.data.length : 0;
         const testCasesCount = testCasesResult.status === 'fulfilled' ? testCasesResult.value.data.length : 0;
 
+        // Store data globally for use in other functions
+        if (usersResult.status === 'fulfilled') {
+            window.currentUsers = usersResult.value.data;
+        }
+        if (projectsResult.status === 'fulfilled') {
+            window.currentProjects = projectsResult.value.data;
+        }
+        if (testCasesResult.status === 'fulfilled') {
+            window.currentTestCases = testCasesResult.value.data;
+        }
+
         // Update UI
         document.getElementById('users-count').textContent = usersCount;
         document.getElementById('projects-count').textContent = projectsCount;
@@ -203,6 +214,9 @@ async function loadProjects() {
         const result = await window.api.getProjects();
         currentProjects = result.data || [];
         renderProjectsTable(currentProjects);
+
+        // Update project filter for test cases
+        updateProjectFilter(currentProjects);
     } catch (error) {
         console.error('Error loading projects:', error);
         // Show empty table on error
@@ -235,9 +249,20 @@ function renderProjectsTable(projects) {
 // Load test cases data
 async function loadTestCases() {
     try {
+        // Load projects if not already loaded (needed for test case creation)
+        if (!window.currentProjects || window.currentProjects.length === 0) {
+            const projectsResult = await window.api.getProjects();
+            window.currentProjects = projectsResult.data || [];
+        }
+
         const result = await window.api.getTestCases({});
         currentTestCases = result.data || [];
         renderTestCasesTable(currentTestCases);
+
+        // Update project filter if projects are loaded
+        if (window.currentProjects && window.currentProjects.length > 0) {
+            updateProjectFilter(window.currentProjects);
+        }
     } catch (error) {
         console.error('Error loading test cases:', error);
         // Show empty table on error
@@ -354,19 +379,93 @@ async function handleProjectSubmit(event) {
     }
 }
 
+// Filter functions
+function filterUsers() {
+    const searchTerm = document.getElementById('user-search').value.toLowerCase();
+    const filteredUsers = currentUsers.filter(user =>
+        user.username.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm)
+    );
+    renderUsersTable(filteredUsers);
+}
+
+function filterProjects() {
+    const searchTerm = document.getElementById('project-search').value.toLowerCase();
+    const filteredProjects = currentProjects.filter(project =>
+        project.name.toLowerCase().includes(searchTerm) ||
+        (project.description && project.description.toLowerCase().includes(searchTerm))
+    );
+    renderProjectsTable(filteredProjects);
+}
+
+function filterTestCases() {
+    const projectId = document.getElementById('project-filter').value;
+    const status = document.getElementById('status-filter').value;
+    const searchTerm = document.getElementById('test-case-search').value.toLowerCase();
+
+    let filteredTestCases = currentTestCases;
+
+    if (projectId) {
+        filteredTestCases = filteredTestCases.filter(tc => tc.project_id === projectId);
+    }
+
+    if (status) {
+        filteredTestCases = filteredTestCases.filter(tc => tc.status === status);
+    }
+
+    if (searchTerm) {
+        filteredTestCases = filteredTestCases.filter(tc =>
+            tc.title.toLowerCase().includes(searchTerm) ||
+            (tc.description && tc.description.toLowerCase().includes(searchTerm))
+        );
+    }
+
+    renderTestCasesTable(filteredTestCases);
+}
+
+// Update project filter options
+function updateProjectFilter(projects = currentProjects) {
+    const projectFilter = document.getElementById('project-filter');
+    if (!projectFilter) return;
+
+    projectFilter.innerHTML = '<option value="">Все проекты</option>';
+
+    if (projects && projects.length > 0) {
+        projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.id;
+            option.textContent = project.name;
+            projectFilter.appendChild(option);
+        });
+    }
+}
+
 // Handle test case form submission
 async function handleTestCaseSubmit(event) {
     event.preventDefault();
 
     const formData = new FormData(event.target);
+    const stepsText = formData.get('steps') || '';
+
+    // Convert steps text to array format expected by backend
+    const steps = stepsText.trim() ? stepsText.split('\n').filter(step => step.trim()).map((step, index) => ({
+        step: step.trim(),
+        order: index + 1
+    })) : null;
+
     const testCaseData = {
         title: formData.get('title'),
         description: formData.get('description'),
-        project_id: parseInt(formData.get('project_id')),
+        project_id: formData.get('project_id'), // Keep as string (UUID)
         priority: formData.get('priority'),
-        steps: formData.get('steps'),
+        status: formData.get('status'),
         expected_result: formData.get('expected-result')
     };
+
+    // Only add steps if they exist
+    if (steps) {
+        testCaseData.steps = steps;
+    }
 
     // Check if this is an update
     const testCaseId = event.target.dataset.testCaseId;
@@ -475,6 +574,8 @@ function showTestCaseModal(testCaseId = null) {
         title.textContent = 'Создать тест-кейс';
         form.reset();
         delete form.dataset.testCaseId;
+        // Set default status for new test cases
+        document.getElementById('test-case-status').value = 'draft';
         updateTestCaseProjectOptions();
     }
 
@@ -550,7 +651,15 @@ async function loadTestCaseForEdit(testCaseId) {
         document.getElementById('test-case-description').value = testCase.description || '';
         document.getElementById('test-case-project').value = testCase.project_id;
         document.getElementById('test-case-priority').value = testCase.priority;
-        document.getElementById('test-case-steps').value = testCase.steps || '';
+        document.getElementById('test-case-status').value = testCase.status;
+
+        // Convert steps array back to text for textarea
+        const stepsText = Array.isArray(testCase.steps)
+            ? testCase.steps.map(step => step.step || step).join('\n')
+            : (testCase.steps || '');
+        document.getElementById('test-case-steps').value = stepsText;
+
+
         document.getElementById('test-case-expected-result').value = testCase.expected_result || '';
         updateTestCaseProjectOptions();
     } catch (error) {
@@ -565,7 +674,7 @@ function updateTestCaseProjectOptions() {
 
     projectSelect.innerHTML = '<option value="">Выберите проект</option>';
 
-    if (window.currentProjects) {
+    if (window.currentProjects && window.currentProjects.length > 0) {
         window.currentProjects.forEach(project => {
             const option = document.createElement('option');
             option.value = project.id;
@@ -702,3 +811,7 @@ window.showProjectModal = showProjectModal;
 window.showTestCaseModal = showTestCaseModal;
 window.closeModal = closeModal;
 window.loadSectionData = loadSectionData;
+window.filterUsers = filterUsers;
+window.filterProjects = filterProjects;
+window.filterTestCases = filterTestCases;
+window.updateProjectFilter = updateProjectFilter;
