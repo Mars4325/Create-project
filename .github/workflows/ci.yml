@@ -1,0 +1,102 @@
+name: TaskHub QA Sandbox CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm ci
+
+    - name: Initialize database
+      run: |
+        cd backend
+        npm run init-db
+
+    - name: Run backend tests
+      run: |
+        cd backend
+        npm test
+
+    - name: Start backend server
+      run: |
+        cd backend
+        npm start &
+        sleep 5
+
+    - name: Check server health
+      run: curl -f http://localhost:3000/health
+
+    - name: Check API endpoints
+      run: |
+        curl -f http://localhost:3000/api/users
+        curl -f http://localhost:3000/api/projects
+        curl -f http://localhost:3000/api/test-cases
+
+    - name: Check Swagger docs
+      run: curl -f http://localhost:3000/api-docs/
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+
+    - name: Run ESLint
+      run: |
+        cd backend
+        npx eslint src/ --ext .js
+
+  frontend-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check HTML files
+      run: |
+        find frontend -name "*.html" -exec echo "Checking {}" \; -exec cat {} \; | grep -q "<!DOCTYPE html>" || exit 1
+
+    - name: Check JavaScript files
+      run: |
+        find frontend/js -name "*.js" -exec node -c {} \;
+
+    - name: Check CSS files
+      run: |
+        find frontend/css -name "*.css" -exec echo "Checking {}" \;
