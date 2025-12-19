@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo 🚀 TaskHub QA Sandbox Server
+echo TaskHub QA Sandbox Server
 echo ========================================
 echo.
 
@@ -10,7 +10,7 @@ echo 📦 Installing dependencies (if needed)...
 call npm install >nul 2>&1
 
 echo.
-echo 🗄️  Initializing database...
+echo 🗄️ Initializing database...
 call npm run init-db >nul 2>&1
 
 echo.

@@ -331,7 +331,7 @@ function renderTestCasesTable(testCases) {
     if (!tbody) return;
 
     if (testCases.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="loading">Тест-кейсы не найдены</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="loading">Тест-кейсы не найдены</td></tr>';
         return;
     }
 
@@ -346,6 +346,7 @@ function renderTestCasesTable(testCases) {
                 <td>${projectName}</td>
                 <td><span class="priority-badge ${getPriorityClass(testCase.priority)}">${formatPriority(testCase.priority)}</span></td>
                 <td><span class="status-badge ${getStatusClass(testCase.status)}">${formatStatus(testCase.status)}</span></td>
+                <td>${testCase.created_by_username || testCase.created_by || '-'}</td>
                 <td>${testCase.assigned_to_username || testCase.assigned_to || '-'}</td>
                 <td>${createActionButtons(testCase, 'test-case')}</td>
             </tr>
@@ -371,6 +372,31 @@ function setupFormHandlers() {
     const testCaseForm = document.getElementById('test-case-form');
     if (testCaseForm) {
         testCaseForm.addEventListener('submit', handleTestCaseSubmit);
+    }
+
+    // Load users for test case assignment
+    loadUsersForAssignment();
+}
+
+// Load users for test case assignment dropdown
+async function loadUsersForAssignment() {
+    try {
+        const result = await window.api.getUsers();
+        const users = result.data || [];
+
+        // Update assigned-to dropdown in test case form
+        const assignedToSelect = document.getElementById('test-case-assigned-to');
+        if (assignedToSelect) {
+            assignedToSelect.innerHTML = '<option value="">Не назначен</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.username;
+                assignedToSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading users for assignment:', error);
     }
 }
 
@@ -700,6 +726,9 @@ function showTestCaseModal(testCaseId = null) {
     const form = document.getElementById('test-case-form');
     const title = document.getElementById('test-case-modal-title');
 
+    // Ensure users are loaded for assignment dropdown
+    loadUsersForAssignment();
+
     if (testCaseId) {
         title.textContent = 'Редактировать тест-кейс';
         form.dataset.testCaseId = testCaseId;
@@ -786,6 +815,7 @@ async function loadTestCaseForEdit(testCaseId) {
         document.getElementById('test-case-project').value = testCase.project_id;
         document.getElementById('test-case-priority').value = testCase.priority;
         document.getElementById('test-case-status').value = testCase.status;
+        document.getElementById('test-case-assigned-to').value = testCase.assigned_to || '';
 
         // Convert steps array back to text for textarea
         const stepsText = Array.isArray(testCase.steps)

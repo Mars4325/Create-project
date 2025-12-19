@@ -165,13 +165,14 @@
                                 <th>Проект</th>
                                 <th>Приоритет</th>
                                 <th>Статус</th>
+                                <th>Владелец</th>
                                 <th>Исполнитель</th>
                                 <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody id="test-cases-tbody">
                             <tr>
-                                <td colspan="6" class="loading">Загрузка тест-кейсов...</td>
+                                <td colspan="7" class="loading">Загрузка тест-кейсов...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -290,6 +291,12 @@
                         <option value="passed">Пройден</option>
                         <option value="failed">Провален</option>
                         <option value="blocked">Заблокирован</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="test-case-assigned-to">Исполнитель:</label>
+                    <select id="test-case-assigned-to" name="assigned_to">
+                        <option value="">Не назначен</option>
                     </select>
                 </div>
                 <div class="form-group">

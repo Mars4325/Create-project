@@ -1,0 +1,40 @@
+========================================
+ИНСТРУКЦИИ ПО КОММИТУ ИЗМЕНЕНИЙ В GIT
+========================================
+
+Откройте командную строку (CMD) и выполните следующие команды:
+
+1. Перейдите в папку проекта:
+   cd "d:\для курсора\taskhub-qa-sandbox"
+
+2. Проверьте статус Git:
+   git status
+
+3. Добавьте все изменения:
+   git add .
+
+4. Создайте коммит:
+   git commit -m "Fix TestCase owner column - show usernames instead of UUIDs
+
+- Add created_by_username and assigned_to_username to TestCase constructor
+- Update frontend to display usernames in test cases table
+- Add debug files for testing validation"
+
+5. (Опционально) Отправьте изменения на GitHub:
+   git push origin main
+
+========================================
+СОДЕРЖИМОЕ КОММИТА:
+========================================
+
+Исправления в backend/src/models/TestCase.js:
+- Добавлены поля created_by_username и assigned_to_username в конструктор
+
+Новые файлы:
+- debug-testcase-owner.html - отладка отображения владельцев
+- test-testcase-owner-fix.bat - тестирование исправления
+- restart-server.bat - перезапуск сервера
+- simple-commit.bat - простой коммит
+- git-commit-fix.bat - полный коммит
+
+========================================
