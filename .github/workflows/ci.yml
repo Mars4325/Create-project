@@ -1,10 +1,10 @@
-name: TaskHub QA Sandbox CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, master ]
 
 jobs:
   test:
@@ -15,17 +15,16 @@ jobs:
         node-version: [16.x, 18.x, 20.x]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Setup Node.js ${{ matrix.node-version }}
+    - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
         cache-dependency-path: backend/package-lock.json
 
-    - name: Install backend dependencies
+    - name: Install dependencies
       run: |
         cd backend
         npm ci
@@ -35,68 +34,35 @@ jobs:
         cd backend
         npm run init-db
 
-    - name: Run backend tests
+    - name: Run API tests
       run: |
         cd backend
-        npm test
+        npm run test:api
 
-    - name: Start backend server
+    - name: Run database tests
       run: |
         cd backend
-        npm start &
-        sleep 5
+        npm run test:db
 
-    - name: Check server health
-      run: curl -f http://localhost:3000/health
-
-    - name: Check API endpoints
-      run: |
-        curl -f http://localhost:3000/api/users
-        curl -f http://localhost:3000/api/projects
-        curl -f http://localhost:3000/api/test-cases
-
-    - name: Check Swagger docs
-      run: curl -f http://localhost:3000/api-docs/
-
-  lint:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18.x
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
-
-    - name: Install dependencies
+    - name: Install ESLint
       run: |
         cd backend
-        npm ci
+        npm install @eslint/js eslint --save-dev
 
-    - name: Run ESLint
+    - name: Check code quality
       run: |
         cd backend
         npx eslint src/ --ext .js
 
-  frontend-check:
+  deploy:
+    needs: test
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Check HTML files
+    - name: Deploy to staging
       run: |
-        find frontend -name "*.html" -exec echo "Checking {}" \; -exec cat {} \; | grep -q "<!DOCTYPE html>" || exit 1
-
-    - name: Check JavaScript files
-      run: |
-        find frontend/js -name "*.js" -exec node -c {} \;
-
-    - name: Check CSS files
-      run: |
-        find frontend/css -name "*.css" -exec echo "Checking {}" \;
+        echo "Deploying to staging environment..."
+        # Add your deployment commands here

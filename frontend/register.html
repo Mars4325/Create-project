@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - TaskHub QA Sandbox</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>TaskHub QA Sandbox</h1>
+                <p>Создание аккаунта</p>
+            </div>
+
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username" name="username" required minlength="3">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="password" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Подтверждение пароля</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Зарегистрироваться</button>
+            </form>
+
+            <div class="auth-links">
+                <p>Уже есть аккаунт? <a href="login.html">Войти</a></p>
+                <p><a href="index.html">Вернуться на главную</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if opened via file:// protocol
+        if (window.location.protocol === 'file:') {
+            window.location.href = '../file-warning.html';
+        }
+    </script>
+    <script src="js/api.js"></script>
+    <script src="js/register.js"></script>
+</body>
+</html>

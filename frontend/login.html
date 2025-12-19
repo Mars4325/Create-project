@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - TaskHub QA Sandbox</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>TaskHub QA Sandbox</h1>
+                <p>Вход в систему</p>
+            </div>
+
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Имя пользователя или Email</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Войти</button>
+            </form>
+
+            <div class="auth-links">
+                <p>Нет аккаунта? <a href="register.html">Зарегистрироваться</a></p>
+                <p><a href="index.html">Вернуться на главную</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if opened via file:// protocol
+        if (window.location.protocol === 'file:') {
+            window.location.href = '../file-warning.html';
+        }
+    </script>
+    <script src="js/api.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>

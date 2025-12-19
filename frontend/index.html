@@ -10,13 +10,28 @@
     <header class="header">
         <div class="container">
             <h1 class="header-title">🎯 TaskHub QA Sandbox</h1>
-            <nav class="nav">
-                <button class="nav-btn active" onclick="showSection('dashboard')">Дашборд</button>
-                <button class="nav-btn" onclick="showSection('users')">Пользователи</button>
-                <button class="nav-btn" onclick="showSection('projects')">Проекты</button>
-                <button class="nav-btn" onclick="showSection('test-cases')">Тест-кейсы</button>
-                <button class="nav-btn" onclick="showSection('api-docs')">API Docs</button>
-            </nav>
+            <div class="header-controls">
+                <!-- Auth buttons for unauthenticated users -->
+                <div id="auth-buttons" class="auth-buttons">
+                    <a href="login.html" class="nav-btn">Войти</a>
+                    <a href="register.html" class="nav-btn nav-btn-primary">Регистрация</a>
+                </div>
+
+                <!-- User info for authenticated users -->
+                <div id="user-info" class="user-info" style="display: none;">
+                    <span id="current-user">Пользователь</span>
+                    <button onclick="logout()" class="btn-logout">Выйти</button>
+                </div>
+
+                <!-- Main navigation -->
+                <nav id="main-nav" class="nav" style="display: none;">
+                    <button class="nav-btn active" onclick="showSection('dashboard')">Дашборд</button>
+                    <button class="nav-btn" onclick="showSection('users')">Пользователи</button>
+                    <button class="nav-btn" onclick="showSection('projects')">Проекты</button>
+                    <button class="nav-btn" onclick="showSection('test-cases')">Тест-кейсы</button>
+                    <button class="nav-btn" onclick="showSection('api-docs')">API Docs</button>
+                </nav>
+            </div>
         </div>
     </header>
 
@@ -150,13 +165,14 @@
                                 <th>Проект</th>
                                 <th>Приоритет</th>
                                 <th>Статус</th>
+                                <th>Владелец</th>
                                 <th>Исполнитель</th>
                                 <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody id="test-cases-tbody">
                             <tr>
-                                <td colspan="6" class="loading">Загрузка тест-кейсов...</td>
+                                <td colspan="7" class="loading">Загрузка тест-кейсов...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -278,6 +294,12 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label for="test-case-assigned-to">Исполнитель:</label>
+                    <select id="test-case-assigned-to" name="assigned_to">
+                        <option value="">Не назначен</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="test-case-steps">Шаги выполнения:</label>
                     <textarea id="test-case-steps" name="steps" rows="4" placeholder="1. Шаг первый&#10;2. Шаг второй&#10;3. Шаг третий"></textarea>
                 </div>
@@ -289,6 +311,7 @@
             </form>
         </div>
     </div>
+
 
     <!-- Scripts -->
     <script src="js/api.js"></script>

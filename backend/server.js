@@ -3,6 +3,7 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
@@ -10,6 +11,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const userRoutes = require('./src/routes/userRoutes');
 const projectRoutes = require('./src/routes/projectRoutes');
 const testCaseRoutes = require('./src/routes/testCaseRoutes');
+const authRoutes = require('./src/routes/authRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +31,18 @@ const swaggerOptions = {
         description: 'Development server',
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [{
+      bearerAuth: [],
+    }],
   },
   apis: ['./src/routes/*.js'], // Path to the API docs
 };
@@ -43,12 +57,17 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
-      imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"]
+      scriptSrcElem: ["'self'"], // Allow external script tags from same origin
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: []
     }
   }
 }));
 app.use(cors());
+app.use(cookieParser());
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -60,6 +79,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/test-cases', testCaseRoutes);

@@ -7,6 +7,7 @@ class Project {
     this.name = data.name;
     this.description = data.description;
     this.owner_id = data.owner_id;
+    this.owner_username = data.owner_username;
     this.status = data.status || 'active';
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;

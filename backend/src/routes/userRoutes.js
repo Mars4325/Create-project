@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const {
   validateUserCreation,
   validateUserUpdate
@@ -67,7 +68,7 @@ const {
  *                   items:
  *                     $ref: '#/components/schemas/User'
  */
-router.get('/', userController.getUsers);
+router.get('/', authenticateToken, userController.getUsers);
 
 /**
  * @swagger
@@ -98,7 +99,7 @@ router.get('/', userController.getUsers);
  *       404:
  *         description: Пользователь не найден
  */
-router.get('/:id', userController.getUserById);
+router.get('/:id', authenticateToken, userController.getUserById);
 
 /**
  * @swagger
@@ -215,7 +216,7 @@ router.post('/', validateUserCreation, userController.createUser);
  *       409:
  *         description: Email или имя пользователя уже используется
  */
-router.put('/:id', validateUserUpdate, userController.updateUser);
+router.put('/:id', authenticateToken, validateUserUpdate, userController.updateUser);
 
 /**
  * @swagger
@@ -247,6 +248,6 @@ router.put('/:id', validateUserUpdate, userController.updateUser);
  *       404:
  *         description: Пользователь не найден
  */
-router.delete('/:id', userController.deleteUser);
+router.delete('/:id', authenticateToken, requireAdmin, userController.deleteUser);
 
 module.exports = router;

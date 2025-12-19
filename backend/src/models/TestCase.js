@@ -12,7 +12,10 @@ class TestCase {
     this.steps = data.steps; // JSON string or array
     this.expected_result = data.expected_result;
     this.created_by = data.created_by;
+    this.created_by_username = data.created_by_username;
     this.assigned_to = data.assigned_to;
+    this.assigned_to_username = data.assigned_to_username;
+    this.project_name = data.project_name;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
   }

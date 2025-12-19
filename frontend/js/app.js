@@ -69,29 +69,41 @@ function createActionButtons(item, type) {
 // Initialize application
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 TaskHub QA Sandbox frontend initializing...');
-    initializeApp();
 
     // Set up modal close handlers
     setupModalHandlers();
-});
-
-function initializeApp() {
-    console.log('📊 Loading dashboard data...');
-    // Load initial data
-    loadDashboardData();
 
     // Set up form handlers
     setupFormHandlers();
 
+    // Check authentication status first
+    checkAuthStatus();
+
+    console.log('✅ Frontend initialized successfully');
+});
+
+function initializeApp() {
+    console.log('📊 Initializing authenticated application...');
+    // Load initial data
+    loadDashboardData();
+
     // Show dashboard by default
     showSection('dashboard');
 
-    console.log('✅ Frontend initialized successfully');
+    console.log('✅ Authenticated application initialized successfully');
 }
 
 // Load dashboard statistics
 async function loadDashboardData() {
-    console.log('🔄 Loading dashboard data...');
+    const token = window.api.getToken();
+
+    // If no token, set empty data and return
+    if (!token) {
+        console.log('No token available, setting empty dashboard data');
+        setEmptyDashboardData();
+        return;
+    }
+
     try {
         // Load all data in parallel
         const [usersResult, projectsResult, testCasesResult] = await Promise.allSettled([
@@ -99,6 +111,7 @@ async function loadDashboardData() {
             window.api.getProjects(),
             window.api.getTestCases({})
         ]);
+
 
         // Update statistics
         const usersCount = usersResult.status === 'fulfilled' ? usersResult.value.data.length : 0;
@@ -108,12 +121,20 @@ async function loadDashboardData() {
         // Store data globally for use in other functions
         if (usersResult.status === 'fulfilled') {
             window.currentUsers = usersResult.value.data;
+        } else {
+            window.currentUsers = [];
         }
+
         if (projectsResult.status === 'fulfilled') {
             window.currentProjects = projectsResult.value.data;
+        } else {
+            window.currentProjects = [];
         }
+
         if (testCasesResult.status === 'fulfilled') {
             window.currentTestCases = testCasesResult.value.data;
+        } else {
+            window.currentTestCases = [];
         }
 
         // Update UI
@@ -122,11 +143,28 @@ async function loadDashboardData() {
         document.getElementById('test-cases-count').textContent = testCasesCount;
         document.getElementById('active-tests-count').textContent = 0;
 
-        console.log('✅ Dashboard data loaded successfully');
 
     } catch (error) {
         console.error('❌ Error loading dashboard data:', error);
+        setEmptyDashboardData();
     }
+}
+
+// Set empty data for dashboard when not authenticated
+function setEmptyDashboardData() {
+    // Clear global data
+    window.currentUsers = [];
+    window.currentProjects = [];
+    window.currentTestCases = [];
+
+    // Update UI with zeros
+    const elements = ['users-count', 'projects-count', 'test-cases-count', 'active-tests-count'];
+    elements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = '0';
+        }
+    });
 }
 
 // Navigation function
@@ -176,6 +214,11 @@ function loadSectionData(sectionId) {
 
 // Load users data
 async function loadUsers() {
+    if (!window.api.isAuthenticated()) {
+        renderUsersTable([]);
+        return;
+    }
+
     try {
         const result = await window.api.getUsers();
         currentUsers = result.data || [];
@@ -210,6 +253,11 @@ function renderUsersTable(users) {
 
 // Load projects data
 async function loadProjects() {
+    if (!window.api.isAuthenticated()) {
+        renderProjectsTable([]);
+        return;
+    }
+
     try {
         const result = await window.api.getProjects();
         currentProjects = result.data || [];
@@ -248,6 +296,11 @@ function renderProjectsTable(projects) {
 
 // Load test cases data
 async function loadTestCases() {
+    if (!window.api.isAuthenticated()) {
+        renderTestCasesTable([]);
+        return;
+    }
+
     try {
         // Load projects if not already loaded (needed for test case creation)
         if (!window.currentProjects || window.currentProjects.length === 0) {
@@ -257,6 +310,8 @@ async function loadTestCases() {
 
         const result = await window.api.getTestCases({});
         currentTestCases = result.data || [];
+
+
         renderTestCasesTable(currentTestCases);
 
         // Update project filter if projects are loaded
@@ -276,20 +331,27 @@ function renderTestCasesTable(testCases) {
     if (!tbody) return;
 
     if (testCases.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="loading">Тест-кейсы не найдены</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="loading">Тест-кейсы не найдены</td></tr>';
         return;
     }
 
-    tbody.innerHTML = testCases.map(testCase => `
-        <tr>
-            <td>${testCase.title}</td>
-            <td>${testCase.project_name || testCase.project_id}</td>
-            <td><span class="priority-badge ${getPriorityClass(testCase.priority)}">${formatPriority(testCase.priority)}</span></td>
-            <td><span class="status-badge ${getStatusClass(testCase.status)}">${formatStatus(testCase.status)}</span></td>
-            <td>${testCase.assigned_to_username || testCase.assigned_to || '-'}</td>
-            <td>${createActionButtons(testCase, 'test-case')}</td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = testCases.map(testCase => {
+        // Find project name from currentProjects array
+        const project = window.currentProjects ? window.currentProjects.find(p => p.id === testCase.project_id) : null;
+        const projectName = project ? project.name : (testCase.project_name || testCase.project_id || 'Неизвестный проект');
+
+        return `
+            <tr>
+                <td>${testCase.title}</td>
+                <td>${projectName}</td>
+                <td><span class="priority-badge ${getPriorityClass(testCase.priority)}">${formatPriority(testCase.priority)}</span></td>
+                <td><span class="status-badge ${getStatusClass(testCase.status)}">${formatStatus(testCase.status)}</span></td>
+                <td>${testCase.created_by_username || testCase.created_by || '-'}</td>
+                <td>${testCase.assigned_to_username || testCase.assigned_to || '-'}</td>
+                <td>${createActionButtons(testCase, 'test-case')}</td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // Setup form handlers
@@ -310,6 +372,31 @@ function setupFormHandlers() {
     const testCaseForm = document.getElementById('test-case-form');
     if (testCaseForm) {
         testCaseForm.addEventListener('submit', handleTestCaseSubmit);
+    }
+
+    // Load users for test case assignment
+    loadUsersForAssignment();
+}
+
+// Load users for test case assignment dropdown
+async function loadUsersForAssignment() {
+    try {
+        const result = await window.api.getUsers();
+        const users = result.data || [];
+
+        // Update assigned-to dropdown in test case form
+        const assignedToSelect = document.getElementById('test-case-assigned-to');
+        if (assignedToSelect) {
+            assignedToSelect.innerHTML = '<option value="">Не назначен</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.username;
+                assignedToSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading users for assignment:', error);
     }
 }
 
@@ -421,6 +508,79 @@ function filterTestCases() {
     }
 
     renderTestCasesTable(filteredTestCases);
+}
+
+// Authentication functions
+async function checkAuthStatus() {
+    if (window.api.isAuthenticated()) {
+        try {
+            const userData = await window.api.getCurrentUser();
+            updateUserInterface(userData.data);
+            // Initialize app for authenticated user
+            initializeApp();
+        } catch (error) {
+            await logout();
+        }
+    } else {
+        showUnauthenticatedInterface();
+    }
+}
+
+function updateUserInterface(user) {
+    if (user) {
+        showAuthenticatedInterface(user);
+    }
+}
+
+// Interface management functions
+function showUnauthenticatedInterface() {
+    // Hide user info and main navigation
+    document.getElementById('user-info').style.display = 'none';
+    document.getElementById('main-nav').style.display = 'none';
+
+    // Show auth buttons
+    document.getElementById('auth-buttons').style.display = 'flex';
+
+    // Clear main content
+    clearApplicationData();
+}
+
+function showAuthenticatedInterface(user) {
+    // Hide auth buttons
+    document.getElementById('auth-buttons').style.display = 'none';
+
+    // Show user info and main navigation
+    document.getElementById('user-info').style.display = 'flex';
+    document.getElementById('main-nav').style.display = 'flex';
+
+    // Update user display name
+    document.getElementById('current-user').textContent = user.username;
+}
+
+async function logout() {
+    try {
+        await window.api.logout();
+        showUnauthenticatedInterface();
+        showMessage('Вы успешно вышли из системы', 'success');
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+
+function clearApplicationData() {
+    // Clear global state
+    window.currentUsers = [];
+    window.currentProjects = [];
+    window.currentTestCases = [];
+
+    // Clear UI
+    const usersTbody = document.getElementById('users-tbody');
+    const projectsTbody = document.getElementById('projects-tbody');
+    const testCasesTbody = document.getElementById('test-cases-tbody');
+
+    if (usersTbody) usersTbody.innerHTML = '';
+    if (projectsTbody) projectsTbody.innerHTML = '';
+    if (testCasesTbody) testCasesTbody.innerHTML = '';
 }
 
 // Update project filter options
@@ -566,6 +726,9 @@ function showTestCaseModal(testCaseId = null) {
     const form = document.getElementById('test-case-form');
     const title = document.getElementById('test-case-modal-title');
 
+    // Ensure users are loaded for assignment dropdown
+    loadUsersForAssignment();
+
     if (testCaseId) {
         title.textContent = 'Редактировать тест-кейс';
         form.dataset.testCaseId = testCaseId;
@@ -652,6 +815,7 @@ async function loadTestCaseForEdit(testCaseId) {
         document.getElementById('test-case-project').value = testCase.project_id;
         document.getElementById('test-case-priority').value = testCase.priority;
         document.getElementById('test-case-status').value = testCase.status;
+        document.getElementById('test-case-assigned-to').value = testCase.assigned_to || '';
 
         // Convert steps array back to text for textarea
         const stepsText = Array.isArray(testCase.steps)
@@ -815,3 +979,5 @@ window.filterUsers = filterUsers;
 window.filterProjects = filterProjects;
 window.filterTestCases = filterTestCases;
 window.updateProjectFilter = updateProjectFilter;
+window.checkAuthStatus = checkAuthStatus;
+window.logout = logout;
