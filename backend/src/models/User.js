@@ -22,13 +22,6 @@ class User {
       bcrypt.hash(password, 12, (err, hash) => {
         if (err) return reject(err);
 
-        const user = new User({
-          username,
-          email,
-          password_hash: hash,
-          role: role || 'user'
-        });
-
         const sql = `
           INSERT INTO users (id, username, email, password_hash, role)
           VALUES (?, ?, ?, ?, ?)
@@ -38,7 +31,6 @@ class User {
           if (err) {
             reject(err);
           } else {
-            user.id = this.lastID;
             resolve(user);
           }
         });

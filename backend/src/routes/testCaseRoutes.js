@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const testCaseController = require('../controllers/testCaseController');
+const { authenticateToken, requireAdmin, requireQAOrAdmin } = require('../middleware/auth');
 const {
   validateTestCaseCreation,
   validateTestCaseUpdate
@@ -139,7 +140,7 @@ const {
  *                   items:
  *                     $ref: '#/components/schemas/TestCase'
  */
-router.get('/', testCaseController.getTestCases);
+router.get('/', authenticateToken, testCaseController.getTestCases);
 
 /**
  * @swagger
@@ -170,7 +171,7 @@ router.get('/', testCaseController.getTestCases);
  *       404:
  *         description: Тест-кейс не найден
  */
-router.get('/:id', testCaseController.getTestCaseById);
+router.get('/:id', authenticateToken, testCaseController.getTestCaseById);
 
 /**
  * @swagger
@@ -201,7 +202,7 @@ router.get('/:id', testCaseController.getTestCaseById);
  *                   items:
  *                     $ref: '#/components/schemas/TestCase'
  */
-router.get('/project/:projectId', testCaseController.getTestCasesByProject);
+router.get('/project/:projectId', authenticateToken, testCaseController.getTestCasesByProject);
 
 /**
  * @swagger
@@ -232,7 +233,7 @@ router.get('/project/:projectId', testCaseController.getTestCasesByProject);
  *                   items:
  *                     $ref: '#/components/schemas/TestCase'
  */
-router.get('/assigned/:userId', testCaseController.getTestCasesByAssignedUser);
+router.get('/assigned/:userId', authenticateToken, testCaseController.getTestCasesByAssignedUser);
 
 /**
  * @swagger
@@ -274,7 +275,7 @@ router.get('/assigned/:userId', testCaseController.getTestCasesByAssignedUser);
  *                       description: Количество по приоритетам
  *                       example: {"low": 5, "medium": 10, "high": 8, "critical": 2}
  */
-router.get('/project/:projectId/stats', testCaseController.getTestCaseStats);
+router.get('/project/:projectId/stats', authenticateToken, testCaseController.getTestCaseStats);
 
 /**
  * @swagger
@@ -361,7 +362,7 @@ router.get('/project/:projectId/stats', testCaseController.getTestCaseStats);
  *       404:
  *         description: Проект не найден
  */
-router.post('/', validateTestCaseCreation, testCaseController.createTestCase);
+router.post('/', authenticateToken, validateTestCaseCreation, testCaseController.createTestCase);
 
 /**
  * @swagger
@@ -449,7 +450,7 @@ router.post('/', validateTestCaseCreation, testCaseController.createTestCase);
  *       400:
  *         description: Некорректные входные данные
  */
-router.put('/:id', validateTestCaseUpdate, testCaseController.updateTestCase);
+router.put('/:id', authenticateToken, requireQAOrAdmin, validateTestCaseUpdate, testCaseController.updateTestCase);
 
 /**
  * @swagger
@@ -481,6 +482,6 @@ router.put('/:id', validateTestCaseUpdate, testCaseController.updateTestCase);
  *       404:
  *         description: Тест-кейс не найден
  */
-router.delete('/:id', testCaseController.deleteTestCase);
+router.delete('/:id', authenticateToken, requireAdmin, testCaseController.deleteTestCase);
 
 module.exports = router;

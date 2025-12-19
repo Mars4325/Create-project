@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const projectController = require('../controllers/projectController');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const {
   validateProjectCreation,
   validateProjectUpdate
@@ -77,7 +78,7 @@ const {
  *                   items:
  *                     $ref: '#/components/schemas/Project'
  */
-router.get('/', projectController.getProjects);
+router.get('/', authenticateToken, projectController.getProjects);
 
 /**
  * @swagger
@@ -108,7 +109,7 @@ router.get('/', projectController.getProjects);
  *       404:
  *         description: Проект не найден
  */
-router.get('/:id', projectController.getProjectById);
+router.get('/:id', authenticateToken, projectController.getProjectById);
 
 /**
  * @swagger
@@ -139,7 +140,7 @@ router.get('/:id', projectController.getProjectById);
  *                   items:
  *                     $ref: '#/components/schemas/Project'
  */
-router.get('/owner/:ownerId', projectController.getProjectsByOwner);
+router.get('/owner/:ownerId', authenticateToken, projectController.getProjectsByOwner);
 
 /**
  * @swagger
@@ -188,7 +189,7 @@ router.get('/owner/:ownerId', projectController.getProjectsByOwner);
  *       400:
  *         description: Некорректные входные данные
  */
-router.post('/', validateProjectCreation, projectController.createProject);
+router.post('/', authenticateToken, validateProjectCreation, projectController.createProject);
 
 /**
  * @swagger
@@ -245,7 +246,7 @@ router.post('/', validateProjectCreation, projectController.createProject);
  *       400:
  *         description: Некорректные входные данные
  */
-router.put('/:id', validateProjectUpdate, projectController.updateProject);
+router.put('/:id', authenticateToken, validateProjectUpdate, projectController.updateProject);
 
 /**
  * @swagger
@@ -277,6 +278,6 @@ router.put('/:id', validateProjectUpdate, projectController.updateProject);
  *       404:
  *         description: Проект не найден
  */
-router.delete('/:id', projectController.deleteProject);
+router.delete('/:id', authenticateToken, requireAdmin, projectController.deleteProject);
 
 module.exports = router;
